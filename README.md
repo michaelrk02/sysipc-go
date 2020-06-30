@@ -9,20 +9,20 @@ Interoperability with another programming language or platform is possible by us
 3. Retrieve the contents of the request
 4. Delete the request file, then release the lock
 5. Process the request with the handler associated with method name
-6. Create a response file and acquire its lock
+6. Lock the response
 7. Write the response
-8. Release the lock, then repeat the same process to handle another incoming request
+8. Unlock the response, then repeat the same process to handle another incoming request
 
 NOTE: The server runs single-threaded (i.e. not creating another thread on handling each request). It is also guaranteed to be safe across different client processes (through server mutual exclusion provided by client calls)
 
 ## Client implementation
 1. Lock the server first
 2. Generate a random call ID
-3. Create a client request and acquire its lock
+3. Lock the client request
 4. Write the request
-5. Release the request lock
+5. Unlock the client request
 6. Wait for the server to process the request while ensuring if the server is still locked
-7. When a response file is available, open it and acquire its lock
+7. When a response is available, acquire its lock
 8. Retrieve the contents of the response
 9. Authenticate the call by comparing its request and response call ID's. If same, then delete the response file
 10. Release the response lock

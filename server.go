@@ -2,8 +2,8 @@ package sysipc
 
 import (
     "errors"
+    "io"
     "log"
-    "os"
     "path"
 )
 
@@ -19,13 +19,15 @@ type Server struct {
     fd, req, res *fileDispatch
 }
 
-func NewServer(r *Router, name string) *Server {
+func NewServer(r *Router, name string, logOutput io.Writer) *Server {
     s := new(Server)
 
     s.r = r
     s.name = name
 
-    s.l = log.New(os.Stdout, "SysIPC [" + s.Address() + "]: ", 0)
+    if logOutput != nil {
+        s.l = log.New(logOutput, "SysIPC [" + s.Address() + "] ", log.LstdFlags)
+    }
     s.handlers = make(map[string]Handler)
 
     s.fd = newFileDispatch(s.Address())
@@ -66,7 +68,9 @@ func (s *Server) Run() {
     for {
         var err error
         if err = s.intercept(); err != nil {
-            s.l.Println(err)
+            if s.l != nil {
+                s.l.Println(err)
+            }
         }
     }
 }
@@ -81,7 +85,7 @@ func (s *Server) intercept() error {
     res := new(response)
     defer func() {
         if err != nil {
-            res.Err = "SERVER: " + err.Error()
+            res.Err = err.Error()
         }
         if err = s.res.send(res, true); err != nil {
             return

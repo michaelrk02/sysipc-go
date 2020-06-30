@@ -79,7 +79,7 @@ func (c *Client) Call(method string, args map[string]interface{}) (interface{}, 
 
     err = nil
     if res.Err != "" {
-        err = errors.New(res.Err)
+        err = errors.New("SERVER: " + res.Err)
     }
     return res.Ret, err
 }

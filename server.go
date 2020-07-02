@@ -5,6 +5,7 @@ import (
     "io"
     "log"
     "path"
+    "sync"
 )
 
 type Handler func(map[string]interface{}) (interface{}, error)
@@ -17,6 +18,9 @@ type Server struct {
     handlers map[string]Handler
 
     fd, req, res *fileDispatch
+
+    running bool
+    mu sync.Mutex
 }
 
 func NewServer(r *Router, name string, logOutput io.Writer) *Server {
@@ -33,6 +37,8 @@ func NewServer(r *Router, name string, logOutput io.Writer) *Server {
     s.fd = newFileDispatch(s.Address())
     s.req = newFileDispatch(s.Address() + ".request")
     s.res = newFileDispatch(s.Address() + ".response")
+
+    s.running = false
 
     return s
 }
@@ -61,11 +67,22 @@ func (s *Server) Handle(method string, h Handler) error {
     return nil
 }
 
+func (s *Server) Running() bool {
+    s.mu.Lock()
+    running := s.running
+    s.mu.Unlock()
+    return running
+}
+
 func (s *Server) Run() {
+    s.mu.Lock()
+    s.running = true
+    s.mu.Unlock()
+
     s.fd.unlock()
     s.req.remove(true)
     s.res.remove(true)
-    for {
+    for s.Running() {
         var err error
         if err = s.intercept(); err != nil {
             if s.l != nil {
@@ -75,11 +92,20 @@ func (s *Server) Run() {
     }
 }
 
+func (s *Server) Stop() {
+    s.mu.Lock()
+    s.running = false
+    s.mu.Unlock()
+}
+
 func (s *Server) intercept() error {
     var err error
     var ok bool
 
-    for !s.req.exists() {
+    for s.Running() && !s.req.exists() {
+    }
+    if !s.Running() {
+        return errors.New("server stopped")
     }
 
     res := new(response)

@@ -3,6 +3,8 @@ Filesystem-based interprocess communication (IPC) protocol implementation in Go 
 
 Interoperability with another programming language or platform is possible by using the same protocol as described below.
 
+***DEPRECATION NOTICE:** This project is deprecated because of high CPU usage while waiting for new files to be created or existing files to be deleted on the filesystem. The solution of this problem is to use platform-specific file watcher (discouraged, may encounter interoperability problems on other implementation platforms) or implement TCP-based protocol instead :)*
+
 ## Server implementation
 1. Before running the server, make sure there are no files associated with it (e.g. requests, responses, locks)
 2. Wait for a client request then acquire its lock
